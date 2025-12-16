@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/resume-analyzer" method="post" enctype="multipart/form-data">
+      <label for="file">Upload your resume (PDF):</label>
+      <input type="file" name="file" id="file" accept="application/pdf" required />
+      <br />
+      <label for="targetRole">Target role (optional):</label>
+      <input type="text" name="targetRole" id="targetRole" />
+      <br />
+      <label for="experienceLevel">Experience level (optional):</label>
+      <input type="text" name="experienceLevel" id="experienceLevel" />
+      <br />
+      <button type="submit">Analyze Resume</button>
+    </form>
+    
+</body>
+</html>
