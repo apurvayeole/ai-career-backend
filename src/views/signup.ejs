@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signup</title>
+    <link rel="stylesheet" href="/signup.css" />
+  </head>
+  <body>
+    <form action="/user" method="post">
+      <h1>Signup</h1>
+      
+    
+      <label>Full Name</label>
+      <input type="text" required name="name" />
+
+      <label>Email</label>
+      <input type="email" required name="email" />
+
+      <label>Password</label>
+      <input type="password" required name="password" />
+
+      <label>City</label>
+      <input type="text" name="city" />
+
+      <label>Education</label>
+      <input type="text" required name="education" />
+
+      <label>Skills (comma separated)</label>
+      <input type="text" required name="skills" placeholder="e.g., JavaScript, React, Node.js" />
+
+      <label>Experience Level</label>
+      <select name="experienceLevel" required>
+        <option value="">Select Experience Level</option>
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+        <option value="expert">Expert</option>
+      </select>
+
+      <button type="submit">Signup</button>
+    </form>
+  </body>
+</html>
