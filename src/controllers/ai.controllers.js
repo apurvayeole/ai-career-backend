@@ -23,6 +23,8 @@ if (!apiKey) {
   throw new Error("GEMINI_API_KEY not found in .env file");
 }
 
+console.log("✓ API Key loaded successfully (length:", apiKey.length, ")");
+
 // Initialize AI client
 const ai = new GoogleGenAI({ apiKey });
 
@@ -97,7 +99,13 @@ const generateRoadmap = async (req, res) => {
 
     return res.json({ success: true, data: parsed, raw });
   } catch (err) {
-    console.error("generateRoadmap error:", err);
+    console.error("generateRoadmap error:", {
+      message: err.message,
+      status: err.status,
+      code: err.code,
+      details: err.error?.details || err.details,
+      fullError: err
+    });
     return res.status(500).json({ error: err.message || String(err) });
   }
 };
@@ -223,7 +231,13 @@ const generateCareerAdviceRaw = async (question) => {
 
     return { text: aiText, raw: response };
   } catch (err) {
-    console.error("generateCareerAdvice error:", err);
+    console.error("generateCareerAdvice error:", {
+      message: err.message,
+      status: err.status,
+      code: err.code,
+      details: err.error?.details || err.details,
+      fullError: err
+    });
     throw err;
   }
 };
@@ -284,6 +298,53 @@ const storeAIResponse = async (userId, type, prompt, aiText, inputText) => {
   }
 };
 
+// Get user's AI response history
+const getUserHistory = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const history = await AIResponse.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.json({ 
+      success: true, 
+      data: history,
+      count: history.length 
+    });
+  } catch (err) {
+    console.error("getUserHistory error:", err.message || String(err));
+    return res.status(500).json({ error: "Failed to fetch history" });
+  }
+};
+
+// Get specific history item
+const getHistoryById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const item = await AIResponse.findOne({ _id: id, userId });
+
+    if (!item) {
+      return res.status(404).json({ error: "History item not found" });
+    }
+
+    return res.json({ success: true, data: item });
+  } catch (err) {
+    console.error("getHistoryById error:", err.message || String(err));
+    return res.status(500).json({ error: "Failed to fetch history item" });
+  }
+};
 
 
-export { generateCareerAdviceRaw, storeAIResponse, analyzeSkillGap, giveCareerAdvice, generateRoadmap, resumeAnalyzer };
+
+export { generateCareerAdviceRaw, storeAIResponse, analyzeSkillGap, giveCareerAdvice, generateRoadmap, resumeAnalyzer, getUserHistory, getHistoryById };

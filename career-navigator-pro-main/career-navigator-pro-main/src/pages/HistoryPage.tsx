@@ -52,12 +52,12 @@ export default function HistoryPage() {
     if (!user?.id) return;
 
     try {
-      const response = await aiAPI.history(user.id);
-      setHistory(response.data);
+      const response = await aiAPI.history();
+      setHistory(response.data.data || []);
     } catch (error: any) {
       toast({
         title: "Failed to load history",
-        description: error.response?.data?.message || "Please try again later.",
+        description: error.response?.data?.error || "Please try again later.",
         variant: "destructive",
       });
     } finally {

@@ -1,13 +1,7 @@
 export const resumePrompt = ({ resumeText, targetRole, experienceLevel }) => `
 You are an AI Resume Expert and ATS Optimization Specialist.
 
-Your job is to:
-1. Analyze the user's resume content
-2. Fix grammar, clarity, and formatting
-3. Improve bullet points using strong action verbs and measurable impact
-4. Make resume ATS-friendly
-5. Rewrite summary and experience sections professionally
-6. Tailor the resume for the target role
+Your job is to analyze the resume, identify strengths and weaknesses, and provide improvement suggestions.
 
 User Resume Text:
 ${resumeText}
@@ -15,20 +9,16 @@ ${resumeText}
 Target Role: ${targetRole}
 Experience Level: ${experienceLevel}
 
-Your output must be structured and professional.
-
-Respond ONLY in JSON format:
+Respond ONLY in valid JSON format:
 
 {
-  "atsScoreApprox": "",
-  "strengths": [],
-  "weaknesses": [],
-  "improvedSummary": "",
-  "correctedExperience": [],
-  "skillsToAdd": [],
-  "grammarFixes": [],
-  "optimizedKeywords": [],
-  "improvedResumeBullets": [],
-  "finalResumeText": ""
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "weaknesses": ["weakness 1", "weakness 2"],
+  "suggestedImprovements": ["improvement 1", "improvement 2", "improvement 3"],
+  "improvedSummary": "2-3 sentences of an improved professional summary",
+  "atsScore": 75
 }
+
+Provide constructive feedback. The atsScore is 0-100.
+All fields are required.
 `;

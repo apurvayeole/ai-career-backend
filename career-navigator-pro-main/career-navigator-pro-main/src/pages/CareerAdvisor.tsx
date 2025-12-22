@@ -29,19 +29,49 @@ export default function CareerAdvisor() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!skills || !education || !interests) {
+      toast({
+        title: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await aiAPI.careerAdvisor(skills, education, interests);
-      setResult(response.data);
+      const skillsArray = skills.split(",").map(s => s.trim());
+      const response = await aiAPI.careerAdvisor(skillsArray, education, interests);
+      
+      // Parse response data
+      const responseData = response.data.data || response.data;
+      
+      // Handle if response is a string (raw text)
+      if (typeof responseData === 'string') {
+        try {
+          const parsed = JSON.parse(responseData);
+          setResult(parsed);
+        } catch {
+          setResult({ roles: [] });
+          toast({
+            title: "Response format",
+            description: responseData,
+          });
+        }
+      } else {
+        setResult(responseData);
+      }
+
       toast({
         title: "Analysis complete!",
         description: "Your career recommendations are ready.",
       });
     } catch (error: any) {
+      const errorMsg = error.response?.data?.error || error.message || "Please try again later.";
       toast({
         title: "Analysis failed",
-        description: error.response?.data?.message || "Please try again later.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
