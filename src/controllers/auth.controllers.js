@@ -1,13 +1,8 @@
-import User from "../models/user.js";
+import User from "../models/User.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-async function getSignupPage(req, res) {
-  return res.render("signup");
-}
-
-async function getLoginPage(req, res) {
-  return res.render("login");
-}
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 async function handleUserSignup(req, res) {
   try {
@@ -17,14 +12,16 @@ async function handleUserSignup(req, res) {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.render("signup", {
+      return res.status(400).json({
+        success: false,
         error: "Email already registered",
       });
     }
 
     // Validate required fields
     if (!name || !email || !password || !education || !experienceLevel) {
-      return res.render("signup", {
+      return res.status(400).json({
+        success: false,
         error: "All required fields must be filled",
       });
     }
@@ -33,7 +30,7 @@ async function handleUserSignup(req, res) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user with all fields
-    await User.create({
+    const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
@@ -43,10 +40,27 @@ async function handleUserSignup(req, res) {
       experienceLevel,
     });
 
-    return res.redirect("/user/login");
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: newUser._id, email: newUser.email },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      token,
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+    });
   } catch (error) {
     console.error("Signup error:", error);
-    return res.render("signup", {
+    return res.status(500).json({
+      success: false,
       error: "Error creating account",
     });
   }
@@ -55,30 +69,56 @@ async function handleUserSignup(req, res) {
 async function handleUserLogin(req, res) {
   try {
     const { email, password } = req.body;
+
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Email and password are required",
+      });
+    }
+
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.render("login", {
+      return res.status(401).json({
+        success: false,
         error: "Invalid Email or Password",
       });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.render("login", {
+      return res.status(401).json({
+        success: false,
         error: "Invalid Email or Password",
       });
     }
 
-    // Set session/token logic here
-    res.cookie("userId", user._id.toString());
-    return res.redirect("/");
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "User logged in successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (error) {
     console.error("Login error:", error);
-    return res.render("login", {
+    return res.status(500).json({
+      success: false,
       error: "Error logging in",
     });
   }
 }
 
-export { getSignupPage, getLoginPage, handleUserSignup, handleUserLogin };
+export { handleUserSignup, handleUserLogin };

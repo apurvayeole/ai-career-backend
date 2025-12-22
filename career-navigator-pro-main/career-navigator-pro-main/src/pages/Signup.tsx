@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
+import { authAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,18 +12,32 @@ import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 export default function Signup() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    education: "",
+    experienceLevel: "beginner",
+    skills: "",
+    city: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password) {
+    if (!formData.name || !formData.email || !formData.password || !formData.education) {
       toast({
-        title: "Please fill in all fields",
+        title: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -30,25 +45,39 @@ export default function Signup() {
 
     setLoading(true);
     
-    // Simulate a brief loading state
-    setTimeout(() => {
-      // Create mock user session and log them in directly
-      const mockUser = {
-        id: "demo-user-" + Date.now(),
-        name: name,
-        email: email,
-      };
+    try {
+      const skills = formData.skills ? formData.skills.split(",").map(s => s.trim()) : [];
+      const response = await authAPI.signup(
+        formData.name,
+        formData.email,
+        formData.password,
+        formData.education,
+        formData.experienceLevel,
+        skills,
+        formData.city
+      );
       
-      login("demo-token-" + Date.now(), mockUser);
-      
+      if (response.data.success) {
+        const { token, user } = response.data;
+        login(token, user);
+        
+        toast({
+          title: "Account created!",
+          description: "Welcome to Career Navigator Pro!",
+        });
+        
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || "Signup failed. Please try again.";
       toast({
-        title: "Account created!",
-        description: "Welcome to Project O!",
+        title: "Signup Error",
+        description: errorMessage,
+        variant: "destructive",
       });
-      
-      navigate("/dashboard");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -67,10 +96,11 @@ export default function Signup() {
             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="name"
+              name="name"
               type="text"
               placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formData.name}
+              onChange={handleChange}
               className="pl-10"
             />
           </div>
@@ -82,10 +112,11 @@ export default function Signup() {
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="email"
-              type="text"
+              name="email"
+              type="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
               className="pl-10"
             />
           </div>
@@ -97,10 +128,11 @@ export default function Signup() {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               className="pl-10 pr-10"
             />
             <button
@@ -111,6 +143,58 @@ export default function Signup() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="education">Education Level *</Label>
+          <Input
+            id="education"
+            name="education"
+            type="text"
+            placeholder="e.g., Bachelor's in Computer Science"
+            value={formData.education}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="experienceLevel">Experience Level</Label>
+          <select
+            id="experienceLevel"
+            name="experienceLevel"
+            value={formData.experienceLevel}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+          >
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+            <option value="expert">Expert</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="skills">Skills (comma-separated)</Label>
+          <Input
+            id="skills"
+            name="skills"
+            type="text"
+            placeholder="e.g., JavaScript, React, Node.js"
+            value={formData.skills}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="city">City</Label>
+          <Input
+            id="city"
+            name="city"
+            type="text"
+            placeholder="Your city"
+            value={formData.city}
+            onChange={handleChange}
+          />
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>

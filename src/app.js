@@ -13,25 +13,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.set('view engine', 'ejs');
-app.set('views', './views');
-
 import authRoutes from './routes/auth.routes.js';
-app.use('/user', authRoutes);
+app.use('/api/auth', authRoutes);
 import aiRoutes from './routes/ai.routes.js';
-app.use('/', aiRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get("/api/test", (req, res) =>{
     res.json({ message: "Test endpoint working!" });
 });
 
-// app.listen(PORT, () => {
-//     console.log(`Server is running on http://localhost:${PORT}`);
-// });
 // health check
 app.get('/health', (req, res) => res.send('OK'));
 
 // log mounted routes for debugging
-console.log('Mounting routes: /user and AI routes');
+console.log('Mounting routes: /api/auth and /api/ai');
 
 export default app;

@@ -1,23 +1,23 @@
 export const skillGapPrompt = ({ skills, targetRole }) => `
 You are an AI Career Coach. Analyze the user's skills and compare them to the skills required for the target job role.
 
-User Skills: ${skills.join(", ")}
+User Skills: ${Array.isArray(skills) ? skills.join(", ") : skills}
 Target Role: ${targetRole}
 
-Provide the following in a clear structured format:
+Provide a structured skill gap analysis.
 
-1. Skills the user already has
-2. Skills the user is missing
-3. Priority order of missing skills
-4. Estimated timeline to learn each skill
-5. Recommended learning resources (YouTube, courses, books)
+Respond ONLY in valid JSON format:
 
-Respond in JSON format:
 {
-  "existingSkills": [],
-  "missingSkills": [],
-  "priority": [],
-  "timeline": [],
-  "resources": []
+  "existingSkills": ["skill1", "skill2"],
+  "missingSkills": [{"skill": "skill", "description": "why needed"}, ...],
+  "priority": [{"skill": "skill", "level": "High|Medium|Low"}, ...],
+  "timeline": [{"skill": "skill", "weeks": 4}, ...],
+  "resources": [{"skill": "skill", "youtube": ["url"], "courses": ["course"], "books": ["book"]}, ...]
 }
+
+Ensure existing skills are a simple array of strings.
+Each missing skill must have skill name and description.
+Priority levels are: High, Medium, or Low.
+Timeline is in weeks.
 `;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
+import { authAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,25 +30,30 @@ export default function Login() {
 
     setLoading(true);
     
-    // Simulate a brief loading state
-    setTimeout(() => {
-      // Create mock user session
-      const mockUser = {
-        id: "demo-user-" + Date.now(),
-        name: email.split("@")[0] || "Demo User",
-        email: email,
-      };
+    try {
+      const response = await authAPI.login(email, password);
       
-      login("demo-token-" + Date.now(), mockUser);
-      
+      if (response.data.success) {
+        const { token, user } = response.data;
+        login(token, user);
+        
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully logged in.",
+        });
+        
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || "Login failed. Please try again.";
       toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
+        title: "Login Error",
+        description: errorMessage,
+        variant: "destructive",
       });
-      
-      navigate("/dashboard");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

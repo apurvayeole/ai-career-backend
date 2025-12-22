@@ -22,8 +22,8 @@ api.interceptors.request.use((config) => {
 export const authAPI = {
   login: (email: string, password: string) => 
     api.post('/api/auth/login', { email, password }),
-  signup: (name: string, email: string, password: string) => 
-    api.post('/api/auth/signup', { name, email, password }),
+  signup: (name: string, email: string, password: string, education: string, experienceLevel: string, skills?: string[], city?: string) => 
+    api.post('/api/auth/signup', { name, email, password, education, experienceLevel, skills, city }),
 };
 
 // AI Feature APIs
@@ -32,21 +32,27 @@ export const aiAPI = {
     api.post('/api/ai/skill-gap', { skills, targetRole }),
   
   roadmap: (goal: string, duration: number, currentSkills: string[]) =>
-    api.post('/api/ai/roadmap', { goal, duration, currentSkills }),
+    api.post('/api/ai/generate-roadmap', { goal, duration, currentSkills }),
   
-  careerAdvisor: (skills: string, education: string, interests: string) =>
-    api.post('/api/ai/career-advisor', { skills, education, interests }),
+  careerAdvisor: (skills: string[], education: string, interests: string) =>
+    api.post('/api/ai/career-advice', { skills, education, interests }),
   
-  resumeAnalysis: (file: File) => {
+  resumeAnalysis: (file: File, targetRole?: string, experienceLevel?: string) => {
     const formData = new FormData();
-    formData.append('resume', file);
-    return api.post('/api/ai/resume-analysis', formData, {
+    formData.append('file', file);
+    if (targetRole) formData.append('targetRole', targetRole);
+    if (experienceLevel) formData.append('experienceLevel', experienceLevel);
+    return api.post('/api/ai/resume-analyzer', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  
-  history: (userId: string) =>
-    api.get(`/api/ai/history/${userId}`),
+
+  // History APIs
+  history: () =>
+    api.get('/api/ai/history'),
+
+  historyItem: (id: string) =>
+    api.get(`/api/ai/history/${id}`),
 };
 
 export default api;

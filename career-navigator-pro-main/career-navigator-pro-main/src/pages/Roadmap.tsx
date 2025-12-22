@@ -31,19 +31,47 @@ export default function Roadmap() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!goal) {
+      toast({
+        title: "Please specify a learning goal",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const response = await aiAPI.roadmap(goal, parseInt(duration), currentSkills);
-      setResult(response.data);
+      
+      // Parse response data
+      const responseData = response.data.data || response.data;
+      
+      // Handle if response is a string (raw text)
+      if (typeof responseData === 'string') {
+        try {
+          const parsed = JSON.parse(responseData);
+          setResult(parsed);
+        } catch {
+          toast({
+            title: "Response",
+            description: responseData,
+          });
+        }
+      } else {
+        setResult(responseData);
+      }
+
       toast({
         title: "Roadmap generated!",
         description: "Your personalized learning roadmap is ready.",
       });
     } catch (error: any) {
+      const errorMsg = error.response?.data?.error || error.message || "Please try again later.";
       toast({
         title: "Generation failed",
-        description: error.response?.data?.message || "Please try again later.",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
