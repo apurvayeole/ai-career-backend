@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { aiAPI } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,18 @@ export default function CareerAdvisor() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CareerResult | null>(null);
 
+  // Load result from localStorage on component mount
+  useEffect(() => {
+    const savedResult = localStorage.getItem('careerAdvisorResult');
+    if (savedResult) {
+      try {
+        setResult(JSON.parse(savedResult));
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -48,19 +60,18 @@ export default function CareerAdvisor() {
       const responseData = response.data.data || response.data;
       
       // Handle if response is a string (raw text)
-      if (typeof responseData === 'string') {
-        try {
-          const parsed = JSON.parse(responseData);
-          setResult(parsed);
-        } catch {
-          setResult({ roles: [] });
-          toast({
-            title: "Response format",
-            description: responseData,
-          });
-        }
+      if (typeof responseData === "string") {
+        const cleaned = responseData
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
+
+        const parsed = JSON.parse(cleaned);
+        setResult(parsed);
+        localStorage.setItem("careerAdvisorResult", JSON.stringify(parsed));
       } else {
         setResult(responseData);
+        localStorage.setItem("careerAdvisorResult", JSON.stringify(responseData));
       }
 
       toast({
@@ -173,7 +184,7 @@ export default function CareerAdvisor() {
           </h3>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {result.roles.map((role, index) => (
+            {result?.roles?.map((role, index) => (
               <div
                 key={role.role}
                 className="rounded-xl border bg-card p-6 shadow-card hover:shadow-card-hover transition-shadow"
@@ -184,10 +195,10 @@ export default function CareerAdvisor() {
                       <Briefcase className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-foreground">{role.role}</h4>
+                      <h4 className="font-semibold text-foreground">{role?.role ?? "Career Role"}</h4>
                       <div className="flex items-center gap-2 mt-1">
                         <DollarSign className="h-3.5 w-3.5 text-success" />
-                        <span className="text-sm text-success font-medium">{role.salaryRange}</span>
+                        <span className="text-sm text-success font-medium">{role?.salaryRange ?? "N/A"}</span>
                       </div>
                     </div>
                   </div>
@@ -198,20 +209,20 @@ export default function CareerAdvisor() {
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span className="text-muted-foreground">Transition Difficulty</span>
-                    <span className={`font-medium ${getDifficultyColor(role.difficulty)}`}>
-                      {role.difficulty}
+                    <span className={`font-medium ${getDifficultyColor(role?.difficulty ?? "Hard")}`}>
+                      {role?.difficulty ?? "N/A"}
                     </span>
                   </div>
                   <div className="h-2 bg-secondary rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        role.difficulty === "Easy"
+                        (role?.difficulty) === "Easy"
                           ? "bg-success"
-                          : role.difficulty === "Medium"
+                          : (role?.difficulty) === "Medium"
                           ? "bg-warning"
                           : "bg-destructive"
                       }`}
-                      style={{ width: getDifficultyWidth(role.difficulty) }}
+                      style={{ width: getDifficultyWidth(role?.difficulty ?? "Hard") }}
                     />
                   </div>
                 </div>
@@ -223,7 +234,7 @@ export default function CareerAdvisor() {
                     <span className="text-sm font-medium">Why This Fits You</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {role.whyRecommended}
+                    {role?.whyRecommended ?? "Great fit for your profile"}
                   </p>
                 </div>
 
@@ -234,14 +245,14 @@ export default function CareerAdvisor() {
                     <span className="text-sm font-medium">Skills to Focus On</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {role.recommendedSkills.map((skill) => (
+                    {role?.recommendedSkills?.map((skill) => (
                       <span
                         key={skill}
                         className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
                       >
-                        {skill}
+                        {skill ?? "Skill"}
                       </span>
-                    ))}
+                    )) ?? <span className="text-xs text-muted-foreground">No specific skills mentioned</span>}
                   </div>
                 </div>
               </div>

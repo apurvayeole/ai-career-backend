@@ -49,21 +49,54 @@ export default function HistoryPage() {
   }, [user]);
 
   const fetchHistory = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await aiAPI.history();
-      setHistory(response.data.data || []);
+      console.log("History API Response:", response); // Debug log
+          
+      const rawItems = response.data?.data || response.data || [];
+
+      const normalized = rawItems.map((item: any) => {
+        let parsedResult = item.result || item.response;
+
+        // If AI response is string → clean + parse
+        if (typeof parsedResult === "string") {
+          try {
+            const cleaned = parsedResult
+              .replace(/```json/g, "")
+              .replace(/```/g, "")
+              .trim();
+
+            parsedResult = JSON.parse(cleaned);
+          } catch {
+            parsedResult = { error: "Invalid AI response" };
+          }
+        }
+
+        return {
+          ...item,
+          result: parsedResult,
+        };
+      });
+
+      console.log("Normalized history:", normalized); // Debug log
+      setHistory(normalized);
     } catch (error: any) {
+      console.error("History fetch error:", error);
       toast({
         title: "Failed to load history",
-        description: error.response?.data?.error || "Please try again later.",
+        description: error.response?.data?.error || error.message || "Please try again later.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -93,11 +126,11 @@ export default function HistoryPage() {
             <div>
               <h4 className="font-medium text-sm mb-2">Missing Skills</h4>
               <div className="flex flex-wrap gap-2">
-                {item.result.missingSkills?.slice(0, 5).map((s: any) => (
-                  <span key={s.skill} className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">
-                    {s.skill}
+                {item?.result?.missingSkills?.slice(0, 5).map((s: any) => (
+                  <span key={s?.skill} className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">
+                    {s?.skill ?? "Skill"}
                   </span>
-                ))}
+                )) ?? <span className="text-xs text-muted-foreground">No missing skills</span>}
               </div>
             </div>
           </div>
@@ -107,7 +140,7 @@ export default function HistoryPage() {
           <div>
             <h4 className="font-medium text-sm mb-2">Weeks Overview</h4>
             <p className="text-sm text-muted-foreground">
-              {item.result.weeks?.length} weeks planned
+              {item?.result?.weeks?.length ?? 0} weeks planned
             </p>
           </div>
         );
@@ -116,11 +149,11 @@ export default function HistoryPage() {
           <div>
             <h4 className="font-medium text-sm mb-2">Recommended Roles</h4>
             <div className="flex flex-wrap gap-2">
-              {item.result.roles?.slice(0, 3).map((r: any) => (
-                <span key={r.role} className="text-xs bg-primary-light text-primary px-2 py-1 rounded-full">
-                  {r.role}
+              {item?.result?.roles?.slice(0, 3).map((r: any) => (
+                <span key={r?.role} className="text-xs bg-primary-light text-primary px-2 py-1 rounded-full">
+                  {r?.role ?? "Role"}
                 </span>
-              ))}
+              )) ?? <span className="text-xs text-muted-foreground">No roles</span>}
             </div>
           </div>
         );
@@ -128,8 +161,8 @@ export default function HistoryPage() {
         return (
           <div className="flex items-center gap-4">
             <div className="text-center">
-              <div className={`text-2xl font-bold ${item.result.atsScore >= 80 ? "text-success" : item.result.atsScore >= 60 ? "text-warning" : "text-destructive"}`}>
-                {item.result.atsScore}%
+              <div className={`text-2xl font-bold ${(item?.result?.atsScore ?? 0) >= 80 ? "text-success" : (item?.result?.atsScore ?? 0) >= 60 ? "text-warning" : "text-destructive"}`}>
+                {item?.result?.atsScore ?? 0}%
               </div>
               <p className="text-xs text-muted-foreground">ATS Score</p>
             </div>
@@ -170,6 +203,8 @@ export default function HistoryPage() {
         <div className="space-y-8">
           {Object.entries(grouped).map(([type, items]) => {
             const config = typeConfig[type as keyof typeof typeConfig];
+            if (!config) return null;
+            
             const Icon = config.icon;
 
             return (

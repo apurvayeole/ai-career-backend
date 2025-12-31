@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { aiAPI } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SkillInput } from "@/components/ui/SkillInput";
@@ -29,6 +29,18 @@ export default function SkillGap() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SkillGapResult | null>(null);
 
+  // Load result from localStorage on component mount
+  useEffect(() => {
+    const savedResult = localStorage.getItem('skillGapResult');
+    if (savedResult) {
+      try {
+        setResult(JSON.parse(savedResult));
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (skills.length === 0) {
@@ -55,18 +67,18 @@ export default function SkillGap() {
       const responseData = response.data.data || response.data;
       
       // Handle if response is a string (raw text)
-      if (typeof responseData === 'string') {
-        try {
-          const parsed = JSON.parse(responseData);
-          setResult(parsed);
-        } catch {
-          toast({
-            title: "Response",
-            description: responseData,
-          });
-        }
+      if (typeof responseData === "string") {
+        const cleaned = responseData
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
+
+        const parsed = JSON.parse(cleaned);
+        setResult(parsed);
+        localStorage.setItem("skillGapResult", JSON.stringify(parsed));
       } else {
         setResult(responseData);
+        localStorage.setItem("skillGapResult", JSON.stringify(responseData));
       }
 
       toast({
@@ -146,14 +158,14 @@ export default function SkillGap() {
               <h3 className="font-semibold text-lg">Existing Skills</h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              {result.existingSkills.map((skill) => (
+              {result?.existingSkills?.map((skill) => (
                 <span
                   key={skill}
                   className="inline-flex items-center rounded-full bg-success/10 px-3 py-1.5 text-sm font-medium text-success border border-success/20"
                 >
-                  {skill}
+                  {skill ?? "Skill"}
                 </span>
-              ))}
+              )) ?? <span className="text-sm text-muted-foreground">No existing skills recorded</span>}
             </div>
           </div>
 
@@ -164,15 +176,15 @@ export default function SkillGap() {
               <h3 className="font-semibold text-lg">Missing Skills</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {result.missingSkills.map((item) => (
+              {result?.missingSkills?.map((item) => (
                 <div
-                  key={item.skill}
+                  key={item?.skill}
                   className="rounded-lg border bg-background p-4"
                 >
-                  <h4 className="font-medium text-foreground">{item.skill}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                  <h4 className="font-medium text-foreground">{item?.skill ?? "Skill"}</h4>
+                  <p className="text-sm text-muted-foreground mt-1">{item?.description ?? "No description"}</p>
                 </div>
-              ))}
+              )) ?? <span className="text-sm text-muted-foreground">No missing skills identified</span>}
             </div>
           </div>
 
@@ -183,14 +195,14 @@ export default function SkillGap() {
               <h3 className="font-semibold text-lg">Learning Priority</h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              {result.priority.map((item) => (
+              {result?.priority?.map((item) => (
                 <span
-                  key={item.skill}
-                  className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium border ${getPriorityColor(item.level)}`}
+                  key={item?.skill}
+                  className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium border ${getPriorityColor(item?.level ?? "Medium")}`}
                 >
-                  {item.skill} • {item.level}
+                  {item?.skill ?? "Skill"} • {item?.level ?? "Medium"}
                 </span>
-              ))}
+              )) ?? <span className="text-sm text-muted-foreground">No priority information available</span>}
             </div>
           </div>
 
@@ -201,20 +213,20 @@ export default function SkillGap() {
               <h3 className="font-semibold text-lg">Estimated Timeline</h3>
             </div>
             <div className="space-y-4">
-              {result.timeline.map((item) => (
-                <div key={item.skill}>
+              {result?.timeline?.map((item) => (
+                <div key={item?.skill}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium">{item.skill}</span>
-                    <span className="text-muted-foreground">{item.weeks} weeks</span>
+                    <span className="font-medium">{item?.skill ?? "Skill"}</span>
+                    <span className="text-muted-foreground">{item?.weeks ?? 0} weeks</span>
                   </div>
                   <div className="h-2 bg-secondary rounded-full overflow-hidden">
                     <div
                       className="h-full gradient-primary rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min((item.weeks / 12) * 100, 100)}%` }}
+                      style={{ width: `${Math.min(((item?.weeks ?? 0) / 12) * 100, 100)}%` }}
                     />
                   </div>
                 </div>
-              ))}
+              )) ?? <span className="text-sm text-muted-foreground">No timeline information available</span>}
             </div>
           </div>
 
@@ -225,14 +237,14 @@ export default function SkillGap() {
               <h3 className="font-semibold text-lg">Learning Resources</h3>
             </div>
             <Accordion type="single" collapsible className="w-full">
-              {result.resources.map((item, index) => (
-                <AccordionItem key={item.skill} value={`item-${index}`}>
+              {result?.resources?.map((item, index) => (
+                <AccordionItem key={item?.skill} value={`item-${index}`}>
                   <AccordionTrigger className="text-left">
-                    {item.skill}
+                    {item?.skill ?? "Learning Resources"}
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-4 pt-2">
-                      {item.youtube && item.youtube.length > 0 && (
+                      {item?.youtube && item?.youtube?.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Youtube className="h-4 w-4 text-destructive" />
@@ -242,14 +254,14 @@ export default function SkillGap() {
                             {item.youtube.map((link, i) => (
                               <li key={i}>
                                 <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
-                                  {link}
+                                  {link ?? "Video link"}
                                 </a>
                               </li>
                             ))}
                           </ul>
                         </div>
                       )}
-                      {item.courses && item.courses.length > 0 && (
+                      {item?.courses && item?.courses?.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <GraduationCap className="h-4 w-4 text-primary" />
@@ -257,12 +269,12 @@ export default function SkillGap() {
                           </div>
                           <ul className="space-y-1 ml-6">
                             {item.courses.map((course, i) => (
-                              <li key={i} className="text-sm text-muted-foreground">• {course}</li>
+                              <li key={i} className="text-sm text-muted-foreground">• {course ?? "Course"}</li>
                             ))}
                           </ul>
                         </div>
                       )}
-                      {item.books && item.books.length > 0 && (
+                      {item?.books && item?.books?.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Book className="h-4 w-4 text-warning" />
@@ -270,7 +282,7 @@ export default function SkillGap() {
                           </div>
                           <ul className="space-y-1 ml-6">
                             {item.books.map((book, i) => (
-                              <li key={i} className="text-sm text-muted-foreground">• {book}</li>
+                              <li key={i} className="text-sm text-muted-foreground">• {book ?? "Book"}</li>
                             ))}
                           </ul>
                         </div>

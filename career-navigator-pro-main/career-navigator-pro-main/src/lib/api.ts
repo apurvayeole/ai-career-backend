@@ -31,8 +31,9 @@ export const aiAPI = {
   skillGap: (skills: string[], targetRole: string) =>
     api.post('/api/ai/skill-gap', { skills, targetRole }),
   
-  roadmap: (goal: string, duration: number, currentSkills: string[]) =>
-    api.post('/api/ai/generate-roadmap', { goal, duration, currentSkills }),
+roadmap: (skills: string[], targetRole: string, experienceLevel: string) =>
+  api.post('/api/ai/generate-roadmap', { skills, targetRole, experienceLevel }),
+
   
   careerAdvisor: (skills: string[], education: string, interests: string) =>
     api.post('/api/ai/career-advice', { skills, education, interests }),

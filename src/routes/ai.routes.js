@@ -1,5 +1,5 @@
 import express from "express";
-import { generateCareerAdviceRaw, storeAIResponse, analyzeSkillGap, giveCareerAdvice, generateRoadmap, resumeAnalyzer, getUserHistory, getHistoryById } from "../controllers/ai.controllers.js";
+import { analyzeSkillGap, giveCareerAdvice, generateRoadmap, resumeAnalyzer, getUserHistory, getHistoryById } from "../controllers/ai.controllers.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
 

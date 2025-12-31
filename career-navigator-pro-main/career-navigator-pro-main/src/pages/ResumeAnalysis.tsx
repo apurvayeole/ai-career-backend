@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { aiAPI } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,18 @@ export default function ResumeAnalysis() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResumeResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load result from localStorage on component mount
+  useEffect(() => {
+    const savedResult = localStorage.getItem('resumeAnalysisResult');
+    if (savedResult) {
+      try {
+        setResult(JSON.parse(savedResult));
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -72,18 +84,18 @@ export default function ResumeAnalysis() {
       const responseData = response.data.data || response.data;
       
       // Handle if response is a string (raw text)
-      if (typeof responseData === 'string') {
-        try {
-          const parsed = JSON.parse(responseData);
-          setResult(parsed);
-        } catch {
-          toast({
-            title: "Response",
-            description: responseData,
-          });
-        }
+      if (typeof responseData === "string") {
+        const cleaned = responseData
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
+
+        const parsed = JSON.parse(cleaned);
+        setResult(parsed);
+        localStorage.setItem("resumeAnalysisResult", JSON.stringify(parsed));
       } else {
         setResult(responseData);
+        localStorage.setItem("resumeAnalysisResult", JSON.stringify(responseData));
       }
 
       toast({
@@ -194,11 +206,11 @@ export default function ResumeAnalysis() {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="w-32 h-32">
                 <CircularProgressbar
-                  value={result.atsScore}
-                  text={`${result.atsScore}%`}
+                  value={result?.atsScore ?? 0}
+                  text={`${result?.atsScore ?? 0}%`}
                   styles={buildStyles({
                     textSize: "20px",
-                    pathColor: getScoreColor(result.atsScore),
+                    pathColor: getScoreColor(result?.atsScore ?? 0),
                     textColor: "hsl(220, 20%, 10%)",
                     trailColor: "hsl(220, 14%, 96%)",
                   })}
@@ -207,9 +219,9 @@ export default function ResumeAnalysis() {
               <div className="text-center md:text-left">
                 <h3 className="font-semibold text-xl text-foreground">ATS Compatibility Score</h3>
                 <p className="text-muted-foreground mt-1">
-                  {result.atsScore >= 80
+                  {(result?.atsScore ?? 0) >= 80
                     ? "Excellent! Your resume is well-optimized for ATS."
-                    : result.atsScore >= 60
+                    : (result?.atsScore ?? 0) >= 60
                     ? "Good, but there's room for improvement."
                     : "Your resume needs optimization to pass ATS filters."}
                 </p>
@@ -225,14 +237,14 @@ export default function ResumeAnalysis() {
                 <h3 className="font-semibold text-lg">Strengths</h3>
               </div>
               <ul className="space-y-3">
-                {result.strengths.map((strength, i) => (
+                {result?.strengths?.map((strength, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 shrink-0 mt-0.5">
                       <CheckCircle className="h-3 w-3 text-success" />
                     </div>
-                    <span className="text-muted-foreground">{strength}</span>
+                    <span className="text-muted-foreground">{strength ?? "Strength"}</span>
                   </li>
-                ))}
+                )) ?? <li className="text-sm text-muted-foreground">No strengths identified</li>}
               </ul>
             </div>
 
@@ -243,14 +255,14 @@ export default function ResumeAnalysis() {
                 <h3 className="font-semibold text-lg">Areas to Improve</h3>
               </div>
               <ul className="space-y-3">
-                {result.weaknesses.map((weakness, i) => (
+                {result?.weaknesses?.map((weakness, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10 shrink-0 mt-0.5">
                       <XCircle className="h-3 w-3 text-destructive" />
                     </div>
-                    <span className="text-muted-foreground">{weakness}</span>
+                    <span className="text-muted-foreground">{weakness ?? "Weakness"}</span>
                   </li>
-                ))}
+                )) ?? <li className="text-sm text-muted-foreground">No weaknesses identified</li>}
               </ul>
             </div>
           </div>
@@ -262,14 +274,14 @@ export default function ResumeAnalysis() {
               <h3 className="font-semibold text-lg">Suggested Improvements</h3>
             </div>
             <ul className="space-y-3">
-              {result.suggestedImprovements.map((suggestion, i) => (
+              {result?.suggestedImprovements?.map((suggestion, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-warning/10 text-warning font-medium text-xs shrink-0 mt-0.5">
                     {i + 1}
                   </span>
-                  <span className="text-muted-foreground">{suggestion}</span>
+                  <span className="text-muted-foreground">{suggestion ?? "Improvement"}</span>
                 </li>
-              ))}
+              )) ?? <li className="text-sm text-muted-foreground">No improvements suggested</li>}
             </ul>
           </div>
 
@@ -281,7 +293,7 @@ export default function ResumeAnalysis() {
             </div>
             <div className="rounded-lg bg-primary-light/50 border border-primary/20 p-4">
               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                {result.improvedSummary}
+                {result?.improvedSummary ?? "No improved summary available"}
               </p>
             </div>
             <p className="text-xs text-muted-foreground mt-3">

@@ -1,28 +1,26 @@
-export const roadmapPrompt = ({ goal, duration, currentSkills }) => {
-  const weeks = Math.ceil(parseInt(duration) / 7);
-  return `
-You are an AI Career Mentor. Your task is to generate a practical, realistic, and skill-focused learning roadmap for the user.
+export const roadmapPrompt = ({ skills, targetRole, experienceLevel }) => `
+You are an AI Career Mentor. Create a structured learning roadmap for the user.
 
-Learning Goal: ${goal}
-Duration: ${duration} days (${weeks} weeks)
-Current Skills: ${Array.isArray(currentSkills) && currentSkills.length > 0 ? currentSkills.join(", ") : "Beginner level"}
+Target Role: ${targetRole}
+Experience Level: ${experienceLevel}
+User Skills: ${skills.length ? skills.join(", ") : "None"}
 
-Create a structured, actionable roadmap with ${weeks} weeks of content. Do NOT give generic advice.
-Instead, produce a goal-specific, skill-focused plan with clear tasks and topics for each week.
-
-Respond ONLY in valid JSON format:
+Generate a skill-focused weekly roadmap in THIS EXACT JSON format:
 
 {
   "weeks": [
     {
       "week": 1,
-      "focus": "Week focus area",
-      "tasks": ["task 1", "task 2", "task 3"],
-      "topics": ["topic 1", "topic 2", "topic 3"]
+      "focus": "",
+      "tasks": [],
+      "topics": []
     }
   ]
 }
 
-Ensure each week object has: week number, focus (one-line summary), tasks (3-4 actionable items), and topics (3-4 topics to learn).
+Rules:
+- Return ONLY valid JSON (no markdown, no text outside JSON)
+- Each week must contain: week, focus, tasks, topics
+- Tasks must be actionable
+- Topics must be specific
 `;
-};
